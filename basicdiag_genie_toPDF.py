@@ -48,14 +48,16 @@ python_custom_functions_path = '/archive/crct/al1966po/ressources/python_custom_
 
 ########################## USER_DEFINED OPTIONS ##########################
 # EXPERIMENTS
-indir= '/archive/crct/al1966po/Phanerozoic_GENIE/HIRNANTIAN/genie_output/ensemble' # without "/" at the end
-exps = ['AP.445eb10X.PO4.0.4O2.TdepJohn2014.0.8PO4.SPIN'] # as many as you wish, in a list
+#indir= '/archive/crct/al1966po/Phanerozoic_GENIE/HIRNANTIAN/genie_output/ensemble' # without "/" at the end
+indir = '/work/crct/al1966po/tmp'
+#exps = ['AP.445eb10X.PO4.0.4O2.TdepJohn2014.0.8PO4.SPIN'] # as many as you wish, in a list
+exps = ['wardetal.2018.ECOGEM.SPIN_MASTER','wardetal.2018.ECOGEM.SPIN_DEV_ECOGEM']
 time2plot = 9999.5
 
 # MAP PROJECTIONS (uncomment the one you want to use)
-projdata = ccrs.LambertCylindrical() # Andy's style
+#projdata = ccrs.LambertCylindrical() # Andy's style
 #projdata = ccrs.EqualEarth() # The trendy one
-#projdata = ccrs.EckertIV() # Chris' style
+projdata = ccrs.EckertIV() # Chris' style
 
 # MUFFIN CONFIG
 do_sedgem = 'n' # are we plotting sedgem outputs?
@@ -99,7 +101,7 @@ ylabel = 1.05
 # data projection system
 data_crs = ccrs.PlateCarree()
 # functions
-functionstoload = ['stepped_coastline_cGENIE','stepped_outline_cGENIE','light_grid','geniemap','genielat','fakealpha','custom_colormaps', 'custom_chars','genielev', 'dopdf_v2']
+functionstoload = ['stepped_coastline_cGENIE','stepped_outline_cGENIE','light_grid','geniemap','genielat','fakealpha','custom_colormaps', 'custom_chars','genielev', 'dopdf']
 for function2load in functionstoload:
     string2execute = python_custom_functions_path + '/' + function2load + '.py'
     exec(open(string2execute).read()) # python 3
