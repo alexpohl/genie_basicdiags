@@ -2,7 +2,7 @@
 # ... and gathers the plot in a PDF compiled with LaTeX with one big figure per page
 # Also plots the difference if only 2 exps are provided
 # The idea is to obtain for each run a summary that can be compared with other runs very quickly
-# Very useful to compare results of 2 exps (dev and master) bedore merging 2 branches on github
+# Very useful to compare results of 2 exps (dev and master) before merging 2 branches on github
 
 # To run the script, adapt the paths and filenames and just 'python basicdiag_genie_toPDF.py'
 # For now, all exps must be in the same directory
