@@ -52,8 +52,8 @@ python_custom_functions_path = '/archive/crct/al1966po/ressources/python_custom_
 
 ########################## USER_DEFINED OPTIONS ##########################
 # EXPERIMENTS
-indir= '/archive/crct/al1966po/Phanerozoic_GENIE/HIRNANTIAN/genie_output/ensemble' # without "/" at the end
-exps = ['AP.445eb10X.PO4.0.4O2.TdepJohn2014.0.8PO4.SPIN','AP.445eb10X.PO4.0.4O2.TdepJohn2014.1.0PO4.SPIN'] # muffin output dirs, as many as you wish
+indir= '/archive/crct/al1966po/Phanerozoic_GENIE/genie_basicdiags/EXAMPLE.input' # without "/" at the end
+exps = ['wardetal.2018.ECOGEM.SPIN'] # muffin output dirs, as many as you wish
 time2plot = 9999.5
 
 # MAP PROJECTIONS [https://scitools.org.uk/cartopy/docs/latest/crs/projections.html]
