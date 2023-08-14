@@ -1,12 +1,18 @@
-def geniemap(londata_edge, latdata_edge, zdata, cmapdata, levdata, tickdata, extendata, lowercolor, uppercolor, projdata, titledata, fnamedata, contourplotflag, londata, latdata, clevdata, lwdata, overlay_flag, overlay_zdata, overlay_cmapdata, outfmtdata):
-
+def geniemap(londata_edge, latdata_edge, zdata, cmapdata, levdata, tickdata, extendata, lowercolor, uppercolor, projdata, titledata, fnamedata, contourplotflag, londata, latdata, clevdata, lwdata, overlay_flag, overlay_zdata, overlay_cmapdata, outfmtdata, logdata):
 
     nlon = np.shape(zdata)[0]
     nlat = np.shape(zdata)[1]
     data_crs = ccrs.PlateCarree()
     landseamask = np.full((nlon, nlat), 1)
     landseamask = np.ma.masked_where(zdata.mask==False, landseamask)
-    norm = BoundaryNorm(levdata, ncolors=cmapdata.N, clip=False)
+
+    if logdata:
+        vmin = np.min(levdata)
+        vmax = np.max(levdata)
+        norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+    else:
+        norm = BoundaryNorm(levdata, ncolors=cmapdata.N, clip=False)
+
     fig =  plt.figure(figsize=(figXsize, figYsize))
     ax = fig.add_subplot(111,projection=projdata)
     #ax = plt.axes([0.3, 0.1, 0.4, 0.8], projection=projdata)
@@ -15,7 +21,7 @@ def geniemap(londata_edge, latdata_edge, zdata, cmapdata, levdata, tickdata, ext
     ax.set(aspect=2)
     ax.set_aspect('auto')
     cf = plt.pcolormesh(londata_edge, latdata_edge, zdata, transform=data_crs, cmap=cmapdata, norm=norm) # https://stackoverflow.com/questions/20678817/pyplot-pcolormesh-confused-when-alpha-not-1
-    if contourplotflag == 'y':
+    if contourplotflag == 'y' and logdata == False:
         ct = plt.contour(londata, latdata, zdata, clevdata, cmap = None, colors='k',linewidths= lwdata,transform=ccrs.PlateCarree())
     if overlay_flag == 'y': # overlay another shading (used for SI)
         cf2 = plt.pcolormesh(londata_edge, latdata_edge, overlay_zdata, transform=data_crs, cmap=overlay_cmapdata)
@@ -34,10 +40,13 @@ def geniemap(londata_edge, latdata_edge, zdata, cmapdata, levdata, tickdata, ext
     gl.yformatter = LATITUDE_FORMATTER
     gl.xlabel_style = {'size': plot_font_size, 'color': 'gray'}
     gl.xlabel_style = {'color': 'red', 'weight': 'bold'}
-    cb = fig.colorbar(cf, orientation='horizontal',extend=extendata,ticks=tickdata)
+    if logdata == False:
+        cb = fig.colorbar(cf, orientation='horizontal',extend=extendata,ticks=tickdata)
+    else:
+        cb = fig.colorbar(cf, orientation='horizontal',extend=extendata)
+    cb.ax.tick_params(labelsize=plot_font_size)
     cf.cmap.set_under(lowercolor)
     cf.cmap.set_over(uppercolor)
-    cb.ax.tick_params(labelsize=plot_font_size)
     cb.ax.set_title(titledata, weight='normal', fontsize=plot_font_size)
     plt.tight_layout()
 

@@ -1,11 +1,18 @@
-def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickdata, extendata, lowercolor, uppercolor, projdata, titledata, fnamedata, contourplotflag, londata, latdata, clevdata):
+def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickdata, extendata, lowercolor, uppercolor, projdata, titledata, fnamedata, contourplotflag, londata, latdata, clevdata, logdata):
 
     # zdata should have 3 dimsn: levs, lon, lat
 
     # update Dec 1 2019 :: accounts for different grids, i.e., empty levels in depth
 
     data_crs = ccrs.PlateCarree()
-    norm = BoundaryNorm(levdata, ncolors=cmapdata.N, clip=False)
+
+    if logdata:
+        vmin = np.min(levdata)
+        vmax = np.max(levdata)
+        norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+    else:
+        norm = BoundaryNorm(levdata, ncolors=cmapdata.N, clip=False)
+
     nlevels = np.shape(zdata)[0]
 
     nonemptylevels = 0 # how many levels filled with data ?
@@ -47,7 +54,8 @@ def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickd
         ax = fig.gca()
         ax.set_aspect('auto')
         cf = plt.pcolormesh(londata_edge, latdata_edge, zdata[k,:,:], transform=data_crs,cmap=cmapdata, norm=norm)
-        ct = plt.contour(londata, latdata, zdata[k,:,:], clevdata, cmap = None, colors='k',linewidths=0.75,transform=data_crs)
+        if logdata == False:
+            ct = plt.contour(londata, latdata, zdata[k,:,:], clevdata, cmap = None, colors='k',linewidths=0.75,transform=data_crs)
         if plot_stepped_outline == 'y':
             stepped_coastline_cGENIE(londata_edge,latdata_edge, ccrs.PlateCarree(), landsea_mask,1.5)
         if landflag == 'y':
@@ -67,10 +75,13 @@ def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickd
         #fig.subplots_adjust(left=0., bottom=-0.01, right=1., top=0.99, wspace=0.02, hspace=0.005)        # https://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots_adjust.html
     fig.subplots_adjust(left=0., bottom=0.11, right=1., top=0.96, wspace=0.02, hspace=0.22)        # https://matplotlib.org/api/_as_gen/matplotlib.pyplot.subplots_adjust.html
     cbar_ax = fig.add_axes([0.35, 0.04, 0.3, 0.02]) # list [x0, y0, width, height]
-    cb = fig.colorbar(cf, cax=cbar_ax,orientation='horizontal',extend=extendata,ticks=tickdata)
+    if logdata == False:
+        cb = fig.colorbar(cf, cax=cbar_ax,orientation='horizontal',extend=extendata,ticks=tickdata)
+    else:
+        cb = fig.colorbar(cf, cax=cbar_ax,orientation='horizontal',extend=extendata)
+    cb.ax.tick_params(labelsize=plot_font_size*0.5)
     cf.cmap.set_under(lowercolor)
     cf.cmap.set_over(uppercolor)
-    cb.ax.tick_params(labelsize=plot_font_size*0.5)
     cb.ax.set_title(titledata, weight='normal', fontsize=plot_font_size*0.5)
 
     # deleting unused subplots

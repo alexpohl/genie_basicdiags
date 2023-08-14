@@ -14,6 +14,7 @@
 
 # Rk: In order to accomodate cgenie experiment names with dots, we create temporary ln -s 
 
+# update Aug 14 2023 :: add a few CH4 diags
 # update Jan 19 2021 :: add seice fraction as a map
 # update May 13 2020 :: computes the diff if a single run is provided, between 2 different saved time slices
 # update Mar 24 2020 :: major change in the way files are read
@@ -129,6 +130,8 @@ dict_biogem3d = {
 'ocn_PO4':'ocn_PO4',
 'ocn_DIC_13C':'ocn_DIC_13C',
 'misc_col_Dage':'misc_col_Dage',
+'ocn_CH4':'ocn_CH4',
+'diag_redox_CH4toDIC_dDIC':'diag_redox_CH4toDIC_dDIC',
 }
 
 dict_biogem2d = {
@@ -139,8 +142,8 @@ dict_biogem2d = {
 'phys_seaice':'phys_seaice',
 'phys_cost':'phys_cost',
 'grid_area_atm':'grid_area',
-'bio_export_POC':'bio_export_POC', # export PROD
 'bio_export_POC':'bio_export_POC',
+'bio_fdexport_POC':'bio_fdexport_POC',
 'bio_diag_k_temp':'bio_diag_k_temp',
 'bio_diag_k_light':'bio_diag_k_light',
 'bio_diag_k_PO4':'bio_diag_k_PO4',
@@ -321,6 +324,12 @@ for exp in exps:
             SIfrac50 = np.ma.masked_where(SIfrac < 50,  SIfrac)
             SATstr = 'Global SAT = ' + str(SAT_avg) + ' ' + degree_sign + 'C'
 
+            # CH4
+            if dovar('ocn_CH4'):
+                CH4 = ocn_CH4[T,:,:,:]
+                ma_CH4 = np.ma.masked_where(np.squeeze(CH4) == 0, np.squeeze(CH4))
+                lat_ocn_CH4 = np.ma.mean(CH4,axis=2)
+
             # deep O2
             O2 = ocn_O2[T,:,:,:]*1E6 # (16, 36, 36); umol L-1)
             deepO2 = np.full(np.array([36, 36]),np.nan)
@@ -384,7 +393,7 @@ for exp in exps:
                 cbartitle = 'Bathymetry (km. b.s.l.)'
                 filename = exp + '_' + plottedT + '_grid_topo.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, grid_topo*1E-3, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, grid_topo*1E-3, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -399,7 +408,7 @@ for exp in exps:
                         diffticklevs = np.arange(-5.,5.+1E-3,1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_grid_topo.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -417,7 +426,7 @@ for exp in exps:
                 cbartitle = 'Wind speed (m s$^{-1}$)'
                 filename = exp + '_' + plottedT + '_phys_wspeed.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, phys_wspeed[T,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, phys_wspeed[T,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -433,7 +442,7 @@ for exp in exps:
                         diffticklevs = np.arange(-3,3+1E-3,1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_wspeed.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -451,7 +460,7 @@ for exp in exps:
                 cbartitle = 'rho'
                 filename = exp + '_' + plottedT + '_rho.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, phys_ocn_rho_surface, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.5, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, phys_ocn_rho_surface, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.5, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -467,7 +476,7 @@ for exp in exps:
                         diffticklevs = np.arange(-2.,2.+1E-9,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_rho.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', lon, lat, diffclevs, 0.5, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', lon, lat, diffclevs, 0.5, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -486,7 +495,7 @@ for exp in exps:
                 cbartitle = 'SSS (PSU)'
                 filename = exp + '_' + plottedT + '_SSS.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, SSS, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, SSS, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -502,7 +511,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.,1.+1E-6,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_SSS.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -521,7 +530,7 @@ for exp in exps:
                 cbartitle = 'Salinity (psu)'
                 filename = exp + '_' + plottedT + '_lat_ocn_sal.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_sal, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., levs, 0.5)
+                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_sal, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., levs, 0.5, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -536,7 +545,7 @@ for exp in exps:
                         diffticklevs = np.arange(-0.4,0.4+1E-3,0.1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_lat_ocn_sal.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.5)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -601,7 +610,7 @@ for exp in exps:
                         diffticklevs = np.arange(-7.5,7.5+1E-3,2.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_SST.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1., 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1., 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -620,7 +629,7 @@ for exp in exps:
                 cbartitle = 'Temperature (' + degree_sign + 'C)'
                 filename = exp + '_' + plottedT + '_lat_ocn_temp.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_temp, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., levs, 0.5)
+                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_temp, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., levs, 0.5, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -635,7 +644,7 @@ for exp in exps:
                         diffticklevs = np.arange(-5,5+1E-3,2.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_lat_ocn_temp.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.5)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -749,7 +758,7 @@ for exp in exps:
                 filename = exp + '_' + plottedT + '_phys_opsi.png'
                 clevs = np.arange(-35,35+1E-9,5)
                 # --- figure ---
-                genielat(lat_moc_edges,-1*zt_moc_edges/1000.,phys_opsi[T,:,:], cmap, levs, clevs, 'both', lower, upper, cbartitle, filename, 'y', lat_moc, -1*zt_moc/1000., levs, 0.75)
+                genielat(lat_moc_edges,-1*zt_moc_edges/1000.,phys_opsi[T,:,:], cmap, levs, clevs, 'both', lower, upper, cbartitle, filename, 'y', lat_moc, -1*zt_moc/1000., levs, 0.75, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -766,7 +775,7 @@ for exp in exps:
                         #diffticklevs = np.arange(-10,10+1E-3,5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_opsi.png'
-                        genielat(lat_moc_edges,-1*zt_moc_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat_moc, -1*zt_moc/1000., difflevs, 0.5)
+                        genielat(lat_moc_edges,-1*zt_moc_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat_moc, -1*zt_moc/1000., difflevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -784,7 +793,7 @@ for exp in exps:
                 cbartitle = 'Sea-ice cover (%)'
                 filename = exp + '_' + plottedT + '_phys_seaice.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, phys_seaice[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0., 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, phys_seaice[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0., 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -799,7 +808,7 @@ for exp in exps:
                         diffticklevs = np.arange(-100,100+1E-9,20)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_seaice.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 1.25, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 1.25, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -821,7 +830,7 @@ for exp in exps:
                 cbartitle = 'Ocean convection'
                 filename = exp + '_' + plottedT + '_phys_cost.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, phys_cost[T,:,:]*timestep_factor, cmap, levs, levs, 'both', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0., 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, phys_cost[T,:,:]*timestep_factor, cmap, levs, levs, 'both', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0., 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -836,7 +845,7 @@ for exp in exps:
                         diffticklevs = np.arange(-400,400+1E-3,100)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_cost.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 1.25, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 1.25, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -955,7 +964,7 @@ for exp in exps:
                 cbartitle = 'Biological export -- POC (mol m$^{-2}$ yr$^{-1}$)'
                 filename = exp + '_' + plottedT + '_bio_export_POC.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, bio_export_POC[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, bio_export_POC[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -971,7 +980,42 @@ for exp in exps:
                         diffticklevs = np.arange(-2.,2.+1E-3,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_bio_export_POC.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, difflevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, difflevs, 0.75, 'n', 'none', 'none','png', False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('bio_fdexport_POC'):
+                # %%%%%%%%%%%% bio fd export POC %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.arange(0,7.5+1E-9,0.5)
+                ticklevs = np.arange(0,7+1E-9,1)
+                clevs = np.arange(0,7.5+1E-9,2)
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.90)
+                cmap = fzcmap_alpha065
+                norm = BoundaryNorm(levs, ncolors=cmap.N, clip=False)
+                extend = 'max'
+                cbartitle = 'Biological export (flux density) -- POC (mol m$^{-2}$ yr$^{-1}$)'
+                filename = exp + '_' + plottedT + '_bio_fdexport_POC.png'
+                # --- figure ---
+                geniemap(lon_edges, lat_edges, bio_fdexport_POC[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        bio_fdexport_POC_0 = bio_fdexport_POC[T,:,:]
+                    elif globalcount ==1:
+                        bio_fdexport_POC_1 = bio_fdexport_POC[T,:,:]
+                        diff = bio_fdexport_POC_1 - bio_fdexport_POC_0
+                        difflevs = np.arange(-2.,2.+1E-3,0.2)
+                        diffclevs = np.arange(-2.,2.+1E-3,0.5)
+                        diffticklevs = np.arange(-2.,2.+1E-3,0.5)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_bio_fdexport_POC.png'
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, difflevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -990,7 +1034,7 @@ for exp in exps:
                 cbartitle = 'Biological productivity control - k_PO4'
                 filename = exp + '_' + plottedT + '_bio_diag_k_PO4.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, bio_diag_k_PO4[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, bio_diag_k_PO4[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1006,7 +1050,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1,1+1E-3,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_bio_diag_kPO4.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1025,7 +1069,7 @@ for exp in exps:
                 cbartitle = 'Biological productivity control - k_temp'
                 filename = exp + '_' + plottedT + '_bio_diag_k_temp.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, bio_diag_k_temp[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, bio_diag_k_temp[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1041,7 +1085,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1,1+1E-3,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_bio_diag_k_temp.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1061,7 +1105,7 @@ for exp in exps:
                 cbartitle = 'Biological productivity control - k_light'
                 filename = exp + '_' + plottedT + '_bio_diag_k_light.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, bio_diag_k_light[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, bio_diag_k_light[T,:,:], cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1077,7 +1121,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1,1+1E-3,0.5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_bio_diag_k_light.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1096,7 +1140,7 @@ for exp in exps:
                 cbartitle = 'PO$_4$ ($\mu$mol kg$^{-1}$)'
                 filename = exp + '_' + plottedT + '_ocn_PO4.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, ocn_PO4[T,0,:,:]*1E6, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, ocn_PO4[T,0,:,:]*1E6, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1112,7 +1156,7 @@ for exp in exps:
                         diffticklevs = np.arange(-0.16,0.16+1E-3,0.08)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_ocn_PO4.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, difflevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, difflevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1129,7 +1173,7 @@ for exp in exps:
                 cmap = fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_O2_deep.png' 
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, deepO2, cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 1.2, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, deepO2, cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs, 1.2, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1144,7 +1188,7 @@ for exp in exps:
                         diffticklevs = np.arange(-100,100+1E-3,50)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_deepO2.png'
-                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1., 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 1., 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1239,7 +1283,7 @@ for exp in exps:
                 cbartitle='O2 $\mu$mol L$^{-1}$'
                 filename = exp + '_' + plottedT + '_zonal_O2.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_O2, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 1.)        
+                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_O2, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 1., False)        
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1254,7 +1298,7 @@ for exp in exps:
                         diffticklevs = np.arange(-100,100+1E-3,50)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_lat_ocn_O2.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.75)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.75, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1272,7 +1316,7 @@ for exp in exps:
                 cmap = fzcmap3 #fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_O2_lev.png'
                 # --- figure ---
-                genielev(lon_edges, lat_edges, np.squeeze(O2), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'O$_2$ concentration ($\mu$mol kg$^{-1}$)', filename, 'y', lon, lat, clevs)
+                genielev(lon_edges, lat_edges, np.squeeze(O2), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'O$_2$ concentration ($\mu$mol kg$^{-1}$)', filename, 'y', lon, lat, clevs, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1288,7 +1332,130 @@ for exp in exps:
                         diffticklevs = np.arange(-80,80+1E-3,40)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_O2_lev.png'
-                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'O$_2$ concentration ($\mu$mol kg$^{-1}$)', difffilename, 'y', lon, lat, diffclevs)
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'O$_2$ concentration ($\mu$mol kg$^{-1}$)', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('ocn_CH4'):
+                # %%%%%%%%%%%% CH4 per level %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-8, 1E-7]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_CH4_lev.png'
+                # --- figure ---
+                genielev(lon_edges, lat_edges, np.squeeze(ma_CH4), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ concentration (mol kg$^{-1}$)', filename, 'y', lon, lat, clevs, True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        CH4_0 = np.squeeze(ma_CH4)
+                    elif globalcount ==1:
+                        CH4_1 = np.squeeze(ma_CH4)
+                        diff = CH4_1 - CH4_0
+                        difflevs = np.arange(-1E-9, 1E-9+1E-9, 1.E-10)
+                        diffclevs = np.arange(-1E-9, 1E-9+1E-9, 1.E-10)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_CH4_lev.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ concentration ($\mu$mol kg$^{-1}$)', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('lat_ocn_CH4'):
+                # %%%%%%%%%%%% zonal CH4 %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-8, 1E-7]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap_alpha065
+                cbartitle='CH$_4$ concentration (mol kg$^{-1}$)'
+                filename = exp + '_' + plottedT + '_zonal_CH4.png'
+                # --- figure ---
+                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_CH4, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 1., True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        lat_ocn_CH4_0 = lat_ocn_CH4
+                    elif globalcount ==1:
+                        lat_ocn_CH4_1 = lat_ocn_CH4
+                        diff = lat_ocn_CH4_1 - lat_ocn_CH4_0
+                        difflevs = np.arange(-1E-9, 1E-9+1E-9, 1.E-10)
+                        diffclevs = np.arange(-1E-9, 1E-9+1E-9, 1.E-10)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_lat_ocn_CH4.png'
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., difflevs, 0.75, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('diag_redox_CH4toDIC_dDIC'):
+                # %%%%%%%%%%%% diag_redox_CH4toDIC_dDIC surface %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-10, 1.E-8]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_CH4toDIC_dDIC_sur.png'
+                # --- figure ---
+                geniemap(lon_edges, lat_edges, np.squeeze(diag_redox_CH4toDIC_dDIC[T,0,:,:]), cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ oxidation (mol kg$^{-1}$ yr^{-1})', filename, 'y', lon, lat, clevs, 1., 'n', 'none', 'none','png', True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        diag_redox_CH4toDIC_dDIC_sur_0 = np.squeeze(diag_redox_CH4toDIC_dDIC[T,0,:,:])
+                    elif globalcount ==1:
+                        diag_redox_CH4toDIC_dDIC_sur_1 = np.squeeze(diag_redox_CH4toDIC_dDIC[T,0,:,:])
+                        diff = diag_redox_CH4toDIC_dDIC_sur_1 - diag_redox_CH4toDIC_dDIC_sur_0
+                        difflevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffclevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffticklevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_redox_CH4toDIC_dDIC_sur.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ oxidation (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('diag_redox_CH4toDIC_dDIC'):
+                # %%%%%%%%%%%% diag_redox_CH4toDIC_dDIC per level %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-10, 1E-8]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_CH4toDIC_dDIC_lev.png'
+                # --- figure ---
+                genielev(lon_edges, lat_edges, np.squeeze(diag_redox_CH4toDIC_dDIC[T,:,:,:]), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ oxidation (mol kg$^{-1}$ yr^{-1})', filename, 'y', lon, lat, clevs, True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        diag_redox_CH4toDIC_dDIC_0 = np.squeeze(diag_redox_CH4toDIC_dDIC[T,:,:,:])
+                    elif globalcount ==1:
+                        diag_redox_CH4toDIC_dDIC_1 = np.squeeze(diag_redox_CH4toDIC_dDIC[T,:,:,:])
+                        diff = diag_redox_CH4toDIC_dDIC_1 - diag_redox_CH4toDIC_dDIC_0
+                        difflevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffclevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffticklevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_redox_CH4toDIC_dDIC_lev.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ oxidation (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1305,7 +1472,7 @@ for exp in exps:
                 cbartitle = 'H2S $\mu$mol L$^{-1}$'
                 filename = exp + '_' + plottedT + '_zonal_H2S.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,ma_lat_ocn_H2S, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 1.)
+                genielat(lat_edges,-1*zt_edges/1000.,ma_lat_ocn_H2S, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 1., False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1321,7 +1488,7 @@ for exp in exps:
                         diffticklevs = np.arange(-50,50+1E-3,25)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_lat_ocn_H2S.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1337,7 +1504,7 @@ for exp in exps:
                 cmap = fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_H2S_lev.png'
                 # --- figure ---
-                genielev(lon_edges, lat_edges, ma_H2S, zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'H2S $\mu$mol L$^{-1}$', filename, 'y', lon, lat, clevs)
+                genielev(lon_edges, lat_edges, ma_H2S, zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'H2S $\mu$mol L$^{-1}$', filename, 'y', lon, lat, clevs, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1353,7 +1520,7 @@ for exp in exps:
                         diffticklevs = np.arange(-50,50+1E-3,25)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_H2S_lev.png'
-                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'H2S $\mu$mol L$^{-1}$', difffilename, 'y', lon, lat, diffclevs)
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'H2S $\mu$mol L$^{-1}$', difffilename, 'y', lon, lat, diffclevs, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1369,7 +1536,7 @@ for exp in exps:
                 cmap = fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_ventilation_age.png'
                 # --- figure ---
-                genielev(lon_edges, lat_edges,np.squeeze(misc_col_Dage[T,:,:,:]), zt, cmap, levs, ticklevs, 'max', lower, upper, projdata ,'Ventilation age (years)', filename, 'n', lon, lat, clevs)
+                genielev(lon_edges, lat_edges,np.squeeze(misc_col_Dage[T,:,:,:]), zt, cmap, levs, ticklevs, 'max', lower, upper, projdata ,'Ventilation age (years)', filename, 'n', lon, lat, clevs, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1385,7 +1552,7 @@ for exp in exps:
                         diffticklevs = np.arange(-500,500+1E-3,250)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_ventilation_age.png'
-                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'Ventilation age (years)', difffilename, 'y', lon, lat, diffclevs)
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'Ventilation age (years)', difffilename, 'y', lon, lat, diffclevs, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1402,7 +1569,7 @@ for exp in exps:
                 cbartitle = 'Ventilation age (yrs)'
                 filename = exp + '_' + plottedT + '_zonal_ventilation_age.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,lat_misc_col_Dage, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 0.75)
+                genielat(lat_edges,-1*zt_edges/1000.,lat_misc_col_Dage, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 0.75, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1418,7 +1585,7 @@ for exp in exps:
                         diffticklevs = np.arange(-500,500+1E-3,250)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_zonal_ventilation_age.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1436,7 +1603,7 @@ for exp in exps:
                 cbartitle = 'd13C of DIC (permil)'
                 filename = exp + '_' + plottedT + '_d13C_DIC_surface.png'
                 # --- figure ---
-                geniemap(lon_edges, lat_edges, ocn_DIC_13C[T,0,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs,0.75, 'n', 'none', 'none','png')
+                geniemap(lon_edges, lat_edges, ocn_DIC_13C[T,0,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', lon, lat, clevs,0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1452,7 +1619,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_ocn_DIC_13C_surf.png'
-                        geniemap(lon_edges, lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(lon_edges, lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', lon, lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1470,7 +1637,7 @@ for exp in exps:
                 cbartitle = 'd13C of DIC (permil)'
                 filename = exp + '_' + plottedT + '_zonal_d13C_DIC.png'
                 # --- figure ---
-                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_DIC_13C, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 0.75)
+                genielat(lat_edges,-1*zt_edges/1000.,lat_ocn_DIC_13C, cmap, levs, ticklevs, 'both', lower, upper, cbartitle, filename, 'y', lat, -1*zt/1000., clevs, 0.75, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1486,7 +1653,7 @@ for exp in exps:
                         diffticklevs = np.arange(-2, 2+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_zonal_ocn_DIC_13C.png'
-                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5)
+                        genielat(lat_edges,-1*zt_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat, -1*zt/1000., diffclevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1500,7 +1667,7 @@ for exp in exps:
                 extend = 'both'
                 filename = exp + '_' + plottedT + '_ocn_DIC_13C_lev.png'
                 # --- figure ---
-                genielev(lon_edges, lat_edges, np.squeeze(ocn_DIC_13C[T,:,:,:]), zt, diffcmap, levs, ticklevs, extend, difflower, diffupper, projdata ,'d13C of DIC (permil)', filename, 'y', lon, lat, clevs)
+                genielev(lon_edges, lat_edges, np.squeeze(ocn_DIC_13C[T,:,:,:]), zt, diffcmap, levs, ticklevs, extend, difflower, diffupper, projdata ,'d13C of DIC (permil)', filename, 'y', lon, lat, clevs, False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1516,7 +1683,7 @@ for exp in exps:
                         diffticklevs = np.arange(-2, 2+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_ocn_DIC_13C_lev.png'
-                        genielev(lon_edges, lat_edges, np.squeeze(diff), zt, diffcmap, difflevs, diffticklevs, extend, difflower, diffupper, projdata ,'d13C of DIC (permil)', difffilename, 'y', lon, lat, diffclevs)
+                        genielev(lon_edges, lat_edges, np.squeeze(diff), zt, diffcmap, difflevs, diffticklevs, extend, difflower, diffupper, projdata ,'d13C of DIC (permil)', difffilename, 'y', lon, lat, diffclevs, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1549,7 +1716,7 @@ for exp in exps:
                 cbartitle = 'Bathymetry (km. b.s.l.)'
                 filename = exp + '_' + plottedT + '_sed_grid_topo.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, (-1)*sed_grid_topo*1E-3, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, (-1)*sed_grid_topo*1E-3, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1564,7 +1731,7 @@ for exp in exps:
                         diffticklevs = np.arange(-5.,5.+1E-3,1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_grid_topo.png'
-                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1581,7 +1748,7 @@ for exp in exps:
                 cmap = fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_sed_ocn_O2.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sed_ocn_O2[Tsed,:,:]*1E6, cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 1.2, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, sed_ocn_O2[Tsed,:,:]*1E6, cmap, levs, ticklevs, 'both', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 1.2, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1596,7 +1763,7 @@ for exp in exps:
                         diffticklevs = np.arange(-100,100+1E-3,50)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_ocn_O2.png'
-                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 1., 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 1., 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1614,7 +1781,7 @@ for exp in exps:
                 cbartitle = 'sed_ocn_DIC_13C (permil)'
                 filename = exp + '_' + plottedT + '_sed_ocn_DIC_13C.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sed_ocn_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, sed_ocn_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1630,7 +1797,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_ocn_DIC_13C_surf.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1648,7 +1815,7 @@ for exp in exps:
                 cbartitle = 'OMEN_wtpct_top'
                 filename = exp + '_' + plottedT + '_OMEN_wtpct_top.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, OMEN_wtpct_top[Tsed,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, OMEN_wtpct_top[Tsed,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1664,7 +1831,7 @@ for exp in exps:
                         diffextend = 'both'
                         diffclevs = np.array([-100, -50, -20, -10, -5, -2.5, 0, 2.5, 5, 10, 20, 50, 100])
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_OMEN_wtpct_top.png'
-                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1682,7 +1849,7 @@ for exp in exps:
                 cbartitle = 'OMEN_wtpct_bot'
                 filename = exp + '_' + plottedT + '_OMEN_wtpct_bot.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, OMEN_wtpct_bot[Tsed,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, OMEN_wtpct_bot[Tsed,:,:], cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs, 0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1698,7 +1865,7 @@ for exp in exps:
                         diffextend = 'both'
                         diffclevs = np.array([-100, -50, -20, -10, -5, -2.5, 0, 2.5, 5, 10, 20, 50, 100])
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_OMEN_wtpct_bot.png'
-                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1716,7 +1883,7 @@ for exp in exps:
                 cbartitle = 'DIC_13C benthic interface exchange flux (permil)'
                 filename = exp + '_' + plottedT + '_sedocn_fnet_DIC_13C.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sedocn_fnet_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, sedocn_fnet_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1732,7 +1899,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sedocn_fnet_DIC_13C.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1750,7 +1917,7 @@ for exp in exps:
                 cbartitle = 'benthic interface exchange flux (permil)'
                 filename = exp + '_' + plottedT + '_sedocn_fnet_PO4.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sedocn_fnet_PO4[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, sedocn_fnet_PO4[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1766,7 +1933,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sedocn_fnet_PO4.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1784,7 +1951,7 @@ for exp in exps:
                 cbartitle = 'sediment burial flux - POC_13C'
                 filename = exp + '_' + plottedT + '_fburial_POC_13C.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, fburial_POC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, fburial_POC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1800,7 +1967,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_POC_13C.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1817,7 +1984,7 @@ for exp in exps:
                 cbartitle = 'sediment burial flux - det'
                 filename = exp + '_' + plottedT + '_fburial_det.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, fburial_det[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png')
+                geniemap(sed_lon_edges, sed_lat_edges, fburial_det[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
@@ -1833,7 +2000,7 @@ for exp in exps:
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_det.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png')
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                     diffsavedfiles.append(difffilename)
