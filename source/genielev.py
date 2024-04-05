@@ -45,6 +45,7 @@ def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickd
         ax = plt.subplot(nboflines,nbofcol,k+1,projection=projdata)
         ax = fig.gca()
         ax.set_aspect('auto')
+        ax.set_extent([-180, 180, -90, 90], crs = data_crs)
         cf = plt.pcolormesh(londata_edge, latdata_edge, zdata[k,:,:], transform=data_crs,cmap=cmapdata, norm=norm)
         if logdata == False:
             ct = plt.contour(londata, latdata, zdata[k,:,:], clevdata, cmap = None, colors='k',linewidths=0.75,transform=data_crs)

@@ -20,6 +20,7 @@ def geniemap(londata_edge, latdata_edge, zdata, cmapdata, levdata, tickdata, ext
     ax = fig.gca()
     ax.set(aspect=2)
     ax.set_aspect('auto')
+    ax.set_extent([-180, 180, -90, 90], crs = data_crs)
     cf = plt.pcolormesh(londata_edge, latdata_edge, zdata, transform=data_crs, cmap=cmapdata, norm=norm) # https://stackoverflow.com/questions/20678817/pyplot-pcolormesh-confused-when-alpha-not-1
     if contourplotflag == 'y' and logdata == False:
         ct = plt.contour(londata, latdata, zdata, clevdata, cmap = None, colors='k',linewidths= lwdata,transform=ccrs.PlateCarree())
