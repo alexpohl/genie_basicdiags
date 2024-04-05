@@ -15,14 +15,6 @@ def genielev(londata_edge, latdata_edge, zdata, ztdata, cmapdata, levdata, tickd
 
     nlevels = np.shape(zdata)[0]
 
-    nonemptylevels = 0 # how many levels filled with data ?
-    for k in np.arange(nlevels):
-        ixx = np.argwhere(zdata[k,:,:].mask==False)
-        if ixx.size != 0:
-            nonemptylevels += 1
-    
-    nlevels = nonemptylevels
-
     # number of plots and figure size
     nbofplots = nlevels
     plotsperline = 4 # must be an integer
