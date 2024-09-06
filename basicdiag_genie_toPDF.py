@@ -132,6 +132,8 @@ dict_biogem3d = {
 'misc_col_Dage':'misc_col_Dage',
 'ocn_CH4':'ocn_CH4',
 'diag_redox_CH4toDIC_dDIC':'diag_redox_CH4toDIC_dDIC',
+'diag_reminD_POC_dCH4':'diag_reminD_POC_dCH4',
+'diag_reminP_POC_dCH4':'diag_reminP_POC_dCH4',
 }
 
 dict_biogem2d = {
@@ -329,6 +331,7 @@ for exp in exps:
                 CH4 = ocn_CH4[T,:,:,:]
                 ma_CH4 = np.ma.masked_where(np.squeeze(CH4) == 0, np.squeeze(CH4))
                 lat_ocn_CH4 = np.ma.mean(CH4,axis=2)
+                diag_reminT_POC_dCH4 = diag_reminD_POC_dCH4 + diag_reminP_POC_dCH4
 
             # deep O2
             O2 = ocn_O2[T,:,:,:]*1E6 # (16, 36, 36); umol L-1)
@@ -1456,6 +1459,99 @@ for exp in exps:
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_redox_CH4toDIC_dDIC_lev.png'
                         genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ oxidation (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('diag_reminD_POC_dCH4'):
+                # %%%%%%%%%%%% diag_reminD_POC_dCH4 per level %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-10, 8E-8]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_diag_reminD_POC_dCH4_lev.png'
+                # --- figure ---
+                genielev(lon_edges, lat_edges, np.squeeze(diag_reminD_POC_dCH4[T,:,:,:]), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ production reminD (mol kg$^{-1}$ yr^{-1})', filename, 'y', lon, lat, clevs, True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        diag_reminD_POC_dCH4_0 = np.squeeze(diag_reminD_POC_dCH4[T,:,:,:])
+                    elif globalcount ==1:
+                        diag_reminD_POC_dCH4_1 = np.squeeze(diag_reminD_POC_dCH4[T,:,:,:])
+                        diff = diag_reminD_POC_dCH4_1 - diag_reminD_POC_dCH4_0
+                        difflevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffclevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffticklevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_reminD_POC_dCH4_lev.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ production reminD (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('diag_reminP_POC_dCH4'):
+                # %%%%%%%%%%%% diag_reminP_POC_dCH4 per level %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-10, 8E-8]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_diag_reminP_POC_dCH4_lev.png'
+                # --- figure ---
+                genielev(lon_edges, lat_edges, np.squeeze(diag_reminP_POC_dCH4[T,:,:,:]), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ production reminP (mol kg$^{-1}$ yr^{-1})', filename, 'y', lon, lat, clevs, True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        diag_reminP_POC_dCH4_0 = np.squeeze(diag_reminP_POC_dCH4[T,:,:,:])
+                    elif globalcount ==1:
+                        diag_reminP_POC_dCH4_1 = np.squeeze(diag_reminP_POC_dCH4[T,:,:,:])
+                        diff = diag_reminP_POC_dCH4_1 - diag_reminP_POC_dCH4_0
+                        difflevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffclevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffticklevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_reminP_POC_dCH4_lev.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ production reminP (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('diag_reminT_POC_dCH4'):
+                # %%%%%%%%%%%% diag_reminT_POC_dCH4 per level %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.array([1.E-10, 8E-8]) # log scale > just give min and max
+                clevs = np.array([])
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap3 #fzcmap_alpha065
+                filename = exp + '_' + plottedT + '_diag_reminT_POC_dCH4_lev.png'
+                # --- figure ---
+                genielev(lon_edges, lat_edges, np.squeeze(diag_reminT_POC_dCH4[T,:,:,:]), zt, cmap, levs, ticklevs, 'both', lower, upper, projdata ,'CH$_4$ production reminD+P (mol kg$^{-1}$ yr^{-1})', filename, 'y', lon, lat, clevs, True)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        diag_reminT_POC_dCH4_0 = np.squeeze(diag_reminT_POC_dCH4[T,:,:,:])
+                    elif globalcount ==1:
+                        diag_reminT_POC_dCH4_1 = np.squeeze(diag_reminT_POC_dCH4[T,:,:,:])
+                        diff = diag_reminT_POC_dCH4_1 - diag_reminT_POC_dCH4_0
+                        difflevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffclevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffticklevs = np.arange(-1E-10, 1E-10+1E-9, 1.E-9)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_diag_reminT_POC_dCH4_lev.png'
+                        genielev(lon_edges, lat_edges, diff, zt, diffcmap, difflevs, diffticklevs, 'both', difflower, diffupper, projdata ,'CH$_4$ production reminD+P (mol kg$^{-1}$ yr^{-1})', difffilename, 'y', lon, lat, diffclevs, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
