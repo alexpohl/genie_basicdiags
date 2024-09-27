@@ -14,8 +14,9 @@
 
 # Rk: In order to accomodate cgenie experiment names with dots, we create temporary ln -s 
 
-# update Aug 14 2023 :: add a few CH4 diags
-# update Jan 19 2021 :: add seice fraction as a map
+# update Sep 27 2024 :: adding evolution plots (+ refining sedgem plots)
+# update Aug 14 2023 :: adding a few CH4 diags
+# update Jan 19 2021 :: adding seice fraction as a map
 # update May 13 2020 :: computes the diff if a single run is provided, between 2 different saved time slices
 # update Mar 24 2020 :: major change in the way files are read
 #                       ... allowing more flexibility in terms of input files and saved variables                       
@@ -32,6 +33,7 @@
 # TODO
 # avoid doing diff if grids are different and...
 # allow diff for different grids except that does not plot diff of different vertical levels
+# include open-system diags (POC burial, POP burial; CaCO3 burial and wt%) as key numbers
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -50,6 +52,9 @@ from netCDF4 import Dataset
 from matplotlib.colors import BoundaryNorm
 from sklearn.linear_model import LinearRegression
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import textwrap
+import pandas as pd
+from os import path
 
 ########################## USER_DEFINED OPTIONS ##########################
 indir ='EXAMPLE.input'
@@ -65,7 +70,9 @@ projdata = ccrs.LambertCylindrical() # Andy's style
 
 # MUFFIN CONFIG
 do_biogem = 'y'
-do_sedgem = 'n' # are we plotting sedgem outputs?
+do_sedgem = 'y' # are we plotting sedgem outputs?
+do_evol = 'y' # are we plotting time evolution?
+varIDs = [38, 2, 36, 1004, 16, 18, 1003, 19, 1007, 1008, 1009, 70, 71, 1010, 1001, 1002, 74, 78, 79, 84] # after source/resvar_plotting_params.py
 ##########################################################################
 
 # additional options (should not be changed in general)
@@ -73,7 +80,6 @@ do_diff = 'y'
 save_fig = 'y'
 create_pdf_summary = 'y'
 plot_stepped_outline = 'y'
-
 
 # nothing to change below this line
 
@@ -166,7 +172,7 @@ dict_sedgem2d = {
 'sed_lat':'lat',
 'sed_lon_edges':'lon_edges',
 'sed_lat_edges':'lat_edges',
-'sed_grid_topo':'sed_grid_topo',
+'sed_grid_topo':'grid_topo',
 'sed_grid_mask':'sed_grid_mask',
 'sed_ocn_temp':'ocn_temp', # overlying ocean properties
 'sed_ocn_sal':'ocn_sal',
@@ -182,6 +188,7 @@ dict_sedgem2d = {
 'fsed_POC_frac2':'fsed_POC_frac2',
 'fsed_POC_13C':'fsed_POC_13C',
 'fburial_det':'fburial_det', # sediment burial flux
+'sed_CaCO3':'sed_CaCO3',
 'fburial_POC':'fburial_POC',
 'fburial_POC_13C':'fburial_POC_13C',
 'OMEN_wtpct_top':'OMEN_wtpct_top', # OMENSED
@@ -237,7 +244,10 @@ for exp in exps:
             my_data = readncfile(indir + '/' + exp + '/biogem/fields_biogem_3d.nc', dict_biogem3d, my_data)
             my_data = readncfile(indir + '/' + exp + '/biogem/fields_biogem_2d.nc', dict_biogem2d, my_data)
         if do_sedgem == 'y':
-            my_data = readncfile(indir + '/' + exp + '/sedgem/fields_sedgem_2d.nc', dict_sedgem2d, my_data)
+            if path.exists(indir + '/' + exp + '/sedgem/fields_sedgem_2d.nc'): 
+                my_data = readncfile(indir + '/' + exp + '/sedgem/fields_sedgem_2d.nc', dict_sedgem2d, my_data)
+            else:
+                do_sedgem = 'n'
 
         # Here we read every field in 'my_data' and send them to the workspace
         for varname in my_data:
@@ -331,6 +341,7 @@ for exp in exps:
                 CH4 = ocn_CH4[T,:,:,:]
                 ma_CH4 = np.ma.masked_where(np.squeeze(CH4) == 0, np.squeeze(CH4))
                 lat_ocn_CH4 = np.ma.mean(CH4,axis=2)
+            if dovar('diag_reminD_POC_dCH4') and dovar('diag_reminP_POC_dCH4'):
                 diag_reminT_POC_dCH4 = diag_reminD_POC_dCH4 + diag_reminP_POC_dCH4
 
             # deep O2
@@ -1809,7 +1820,7 @@ for exp in exps:
                 upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.90)
                 cmap = fzcmap_alpha065
                 norm = BoundaryNorm(levs, ncolors=cmap.N, clip=False)
-                cbartitle = 'Bathymetry (km. b.s.l.)'
+                cbartitle = 'Sediment bathymetry (km. b.s.l.)'
                 filename = exp + '_' + plottedT + '_sed_grid_topo.png'
                 # --- figure ---
                 geniemap(sed_lon_edges, sed_lat_edges, (-1)*sed_grid_topo*1E-3, cmap, levs, ticklevs, 'max', lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none', 0, 'n', 'none', 'none','png', False)
@@ -1840,7 +1851,7 @@ for exp in exps:
                 ticklevs = levs
                 lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
                 upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
-                cbartitle='O2 $\mu$mol L$^{-1}$'
+                cbartitle='Sediment O$_2$ $\mu$mol kg$^{-1}$'
                 cmap = fzcmap_alpha065
                 filename = exp + '_' + plottedT + '_sed_ocn_O2.png'
                 # --- figure ---
@@ -1860,40 +1871,6 @@ for exp in exps:
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_ocn_O2.png'
                         geniemap(sed_lon_edges, sed_lat_edges, diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 1., 'n', 'none', 'none','png', False)
-                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
-                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
-                        diffsavedfiles.append(difffilename)
-
-            if dovar('sed_ocn_DIC_13C'):
-                # %%%%%%%%%%%% ocn_DIC_13C %%%%%%%%%%%%
-                # --- parameters ---
-                levs = np.arange(-10., 1.+1E-6, 0.5)
-                clevs = np.arange(-10., 1.+1E-6, 2.)
-                ticklevs = np.arange(-10., 1.+1E-6, 1)
-                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
-                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
-                cmap = fzcmap_alpha065
-                extend = 'both'
-                cbartitle = 'sed_ocn_DIC_13C (permil)'
-                filename = exp + '_' + plottedT + '_sed_ocn_DIC_13C.png'
-                # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sed_ocn_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
-                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
-                os.system('ln -s ' + filename + ' ' + lnfile)
-                savedfiles.append(filename)
-                # --- diff ---
-                if do_diff == 'y':
-                    if globalcount ==0:
-                        sed_ocn_DIC_13C_0 = sed_ocn_DIC_13C[Tsed,:,:]
-                    elif globalcount ==1:
-                        sed_ocn_DIC_13C_1 = sed_ocn_DIC_13C[Tsed,:,:]
-                        diff = sed_ocn_DIC_13C_1 - sed_ocn_DIC_13C_0
-                        difflevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffclevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
-                        diffextend = 'both'
-                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_ocn_DIC_13C_surf.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
@@ -1966,35 +1943,100 @@ for exp in exps:
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
 
-            if dovar('sedocn_fnet_DIC_13C'):
-                # %%%%%%%%%%%% sedocn_fnet_DIC_13C %%%%%%%%%%%%
+            if dovar('fburial_POC'):
+                # %%%%%%%%%%%% fburial_det %%%%%%%%%%%%
                 # --- parameters ---
-                levs = np.arange(-33.5, -31.5+1E-6, 0.25)
-                clevs = np.arange(-33.5, -31.5+1E-6, 0.25)
-                ticklevs = np.arange(-33.5, -31.5+1E-6, 0.5)
+                levs = np.arange(0, 75+1E-6, 5)
+                ticklevs = np.arange(0, 75+1E-6, 15)
                 lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
                 upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
                 cmap = fzcmap_alpha065
-                extend = 'both'
-                cbartitle = 'DIC_13C benthic interface exchange flux (permil)'
-                filename = exp + '_' + plottedT + '_sedocn_fnet_DIC_13C.png'
+                extend = 'max'
+                cbartitle = 'Sediment burial flux - POC (x10$^6$ mol cm$^{-2}$ yr$^{-1}$)'
+                filename = exp + '_' + plottedT + '_fburial_POC.png'
                 # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, sedocn_fnet_DIC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
+                geniemap(sed_lon_edges, sed_lat_edges, fburial_POC[Tsed,:,:]*1.E6, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png', False)
                 filecount += 1; lnfile = 'file' + str(filecount) + '.png'
                 os.system('ln -s ' + filename + ' ' + lnfile)
                 savedfiles.append(filename)
                 # --- diff ---
                 if do_diff == 'y':
                     if globalcount ==0:
-                        sedocn_fnet_DIC_13C_0 = sedocn_fnet_DIC_13C[Tsed,:,:]
+                        fburial_POC_0 = fburial_POC[Tsed,:,:]
                     elif globalcount ==1:
-                        sedocn_fnet_DIC_13C_1 = sedocn_fnet_DIC_13C[Tsed,:,:]
-                        diff = sedocn_fnet_DIC_13C_1 - sedocn_fnet_DIC_13C_0
+                        fburial_POC_1 = fburial_POC[Tsed,:,:]
+                        diff = fburial_POC_1 - fburial_POC_0
+                        difflevs = np.arange(-15, 15.+1E-6, 1.)
+                        diffclevs = np.arange(-15, 15.+1E-6, 5.)
+                        diffticklevs = np.arange(-15, 15.+1E-6, 5.)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_POC.png'
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('fburial_det'):
+                # %%%%%%%%%%%% fburial_det %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.arange(0, 10+1E-6, 1)
+                ticklevs = np.arange(0, 10+1E-6, 5)
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap_alpha065
+                extend = 'both'
+                cbartitle = 'Sediment burial flux - det (x10$^6$ mol cm$^{-2}$ yr$^{-1}$)'
+                filename = exp + '_' + plottedT + '_fburial_det.png'
+                # --- figure ---
+                geniemap(sed_lon_edges, sed_lat_edges, fburial_det[Tsed,:,:]*1.E6, cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png', False)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        fburial_det_0 = fburial_det[Tsed,:,:]
+                    elif globalcount ==1:
+                        fburial_det_1 = fburial_det[Tsed,:,:]
+                        diff = fburial_det_1 - fburial_det_0
                         difflevs = np.arange(-1.5, 1.5+1E-6, 0.1)
                         diffclevs = np.arange(-1.5, 1.5+1E-6, 0.1)
                         diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
                         diffextend = 'both'
-                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sedocn_fnet_DIC_13C.png'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_det.png'
+                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('sed_CaCO3'):
+                # %%%%%%%%%%%% fburial_det %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.arange(0,100+1E-9,5.)
+                ticklevs = np.arange(0,100+1E-9,20.)
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
+                cmap = fzcmap_alpha065
+                extend = 'neither'
+                cbartitle = 'Surface sediment composition - CaCO3 (wt%)'
+                filename = exp + '_' + plottedT + '_sed_CaCO3.png'
+                # --- figure ---
+                geniemap(sed_lon_edges, sed_lat_edges, sed_CaCO3[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png', False)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        sed_CaCO3_0 = sed_CaCO3[Tsed,:,:]
+                    elif globalcount ==1:
+                        sed_CaCO3_1 = sed_CaCO3[Tsed,:,:]
+                        diff = sed_CaCO3_1 - sed_CaCO3_0
+                        difflevs = np.arange(-50, 50+1E-6, 5.)
+                        diffclevs = np.arange(-50, 50+1E-6, 5.)
+                        diffticklevs = np.arange(-50, 50+1E-6, 25)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_sed_CaCO3.png'
                         geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
@@ -2034,89 +2076,78 @@ for exp in exps:
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
                         diffsavedfiles.append(difffilename)
 
-            if dovar('fburial_POC_13C'):
-                # %%%%%%%%%%%% fburial_POC_13C %%%%%%%%%%%%
-                # --- parameters ---
-                levs = np.arange(-33.5, -31.5+1E-6, 0.25)
-                clevs = np.arange(-33.5, -31.5+1E-6, 0.25)
-                ticklevs = np.arange(-33.5, -31.5+1E-6, 0.5)
-                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
-                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
-                cmap = fzcmap_alpha065
-                extend = 'both'
-                cbartitle = 'sediment burial flux - POC_13C'
-                filename = exp + '_' + plottedT + '_fburial_POC_13C.png'
-                # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, fburial_POC_13C[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'y', sed_lon, sed_lat, clevs,0.75, 'n', 'none', 'none','png', False)
-                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
-                os.system('ln -s ' + filename + ' ' + lnfile)
-                savedfiles.append(filename)
-                # --- diff ---
-                if do_diff == 'y':
-                    if globalcount ==0:
-                        fburial_POC_13C_0 = fburial_POC_13C[Tsed,:,:]
-                    elif globalcount ==1:
-                        fburial_POC_13C_1 = fburial_POC_13C[Tsed,:,:]
-                        diff = fburial_POC_13C_1 - fburial_POC_13C_0
-                        difflevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffclevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
-                        diffextend = 'both'
-                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_POC_13C.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
-                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
-                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
-                        diffsavedfiles.append(difffilename)
+    if do_evol == 'y':
 
-            if dovar('fburial_det'):
-                # %%%%%%%%%%%% fburial_det %%%%%%%%%%%%
-                # --- parameters ---
-                levs = np.arange(0, 10E-6, 1E-6)
-                ticklevs = np.arange(0, 10E-6, 5E-6)
-                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
-                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.75)
-                cmap = fzcmap_alpha065
-                extend = 'both'
-                cbartitle = 'sediment burial flux - det'
-                filename = exp + '_' + plottedT + '_fburial_det.png'
-                # --- figure ---
-                geniemap(sed_lon_edges, sed_lat_edges, fburial_det[Tsed,:,:], cmap, levs, ticklevs, extend, lower, upper, projdata ,cbartitle, filename, 'n', 'none', 'none', 'none',0.75, 'n', 'none', 'none','png', False)
-                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
-                os.system('ln -s ' + filename + ' ' + lnfile)
-                savedfiles.append(filename)
-                # --- diff ---
-                if do_diff == 'y':
-                    if globalcount ==0:
-                        fburial_det_0 = fburial_det[Tsed,:,:]
-                    elif globalcount ==1:
-                        fburial_det_1 = fburial_det[Tsed,:,:]
-                        diff = fburial_det_1 - fburial_det_0
-                        difflevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffclevs = np.arange(-1.5, 1.5+1E-6, 0.1)
-                        diffticklevs = np.arange(-1.5, 1.5+1E-6, 1)
-                        diffextend = 'both'
-                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_fburial_det.png'
-                        geniemap(sed_lon_edges, sed_lat_edges,  diff, diffcmap, difflevs, diffticklevs, diffextend, lower, upper, projdata ,cbartitle, difffilename, 'y', sed_lon, sed_lat, diffclevs, 0.75, 'n', 'none', 'none','png', False)
-                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
-                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
-                    diffsavedfiles.append(difffilename)
+        for varID in varIDs[:]:
+
+            # standard values
+            factor = 1
+            offset = 0
+            geniesubdir = 'biogem'
+            exec(open('./source/resvar_plotting_params.py').read())
+
+            # reformatting for plotting purposes if varname is toooooo loooong
+            if len(varname) > 20:
+                varname2plot = "\n".join(textwrap.wrap(varname,22))
+            else:
+                varname2plot = varname
+
+            infile = indir + '/' + exp + '/' + geniesubdir + '/' + txtfile
+
+            if path.exists(infile): # if path does not exist, let us ignore this variable
+
+                # reading table headers to determine...
+                table_headers = pd.read_csv(infile,delimiter="/", header=0, engine='python',nrows=0)
+                # number of columns
+                ncols = np.shape(table_headers)[1]
+                if ncols >= col: # if field does not exist, let us ignore this variable
+                    # and using ncols to read content of the table
+                    table_content = pd.read_csv(infile, names=list(range(ncols)),engine='python',skiprows=1, delim_whitespace=True).to_numpy() # varID1 > (450, 6)
+
+                    # extracting time of interest
+                    time = table_content[:,0]
+                    val = table_content[:,col]
+                    vals2plot = val * factor + offset
+                    time2plot_evol = time[:]
+
+                    # plotting
+                    fig = plt.figure(figsize=(8.,5.))
+                    ax = fig.add_subplot(111)
+                    ax = fig.gca()
+                    ax.plot(time2plot_evol,vals2plot,'-', linewidth=1.5, zorder=4)
+                    ax.set_ylabel(varname2plot)
+                    ax.grid(); ax.grid(color='grey', linestyle='--', linewidth=0.5, dashes=(0.6, 1))
+                    ax.set_xlabel('Model run time (yr)')
+                    plt.tight_layout()
+                    suffix='.pdf';
+                    filename = 'res__' + varname2save + '_' + exp.replace('/','') + suffix
+                    plt.savefig(filename,format='pdf')
+                    filecount += 1; lnfile = 'file' + str(filecount) + '.pdf'
+                    os.system('ln -s ' + filename + ' ' + lnfile)
+                    savedfiles.append(filename)
 
         ########################################################################
         #                                  LATEX                               #
         ########################################################################
 
         if create_pdf_summary == 'y':
-            sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak '
-            'Global SAT: ' + str(SAT_avg) + '$^\circ$C \linebreak '
-            'Seafloor anoxic area: ' + str(np.round(seafloor_anoxia_abs/1E6/1E6,2)) + ' Mkm$^2$ \linebreak '
-            'Seafloor anoxic area percentage: ' + str(np.round(seafloor_anoxia_per*100,2)) + ' \%')
+            if do_biogem == 'y':
+                sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak '
+                'Global SAT: ' + str(SAT_avg) + '$^\circ$C \linebreak '
+                'Seafloor anoxic area: ' + str(np.round(seafloor_anoxia_abs/1E6/1E6,2)) + ' Mkm$^2$ \linebreak '
+                'Seafloor anoxic area percentage: ' + str(np.round(seafloor_anoxia_per*100,2)) + ' \%')
+            else:
+                sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak ')
             dopdf(savedfiles, 'file', filecount, exp + '_' + plottedT, sentence_to_use)
 
         if (do_diff == 'y'and globalcount == 1):
-            diff_sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak '
-            'Global SAT: ' + str(SAT_avg_diff) + '$^\circ$C \linebreak '
-            'Seafloor anoxic area: ' + str(np.round(seafloor_anoxia_abs_diff/1E6/1E6,2)) + ' Mkm$^2$ \linebreak '
-            'Seafloor anoxic area percentage: ' + str(np.round(seafloor_anoxia_per_diff*100,2)) + ' \%')
+            if do_biogem == 'y':
+                diff_sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak '
+                'Global SAT: ' + str(SAT_avg_diff) + '$^\circ$C \linebreak '
+                'Seafloor anoxic area: ' + str(np.round(seafloor_anoxia_abs_diff/1E6/1E6,2)) + ' Mkm$^2$ \linebreak '
+                'Seafloor anoxic area percentage: ' + str(np.round(seafloor_anoxia_per_diff*100,2)) + ' \%')
+            else:
+                diff_sentence_to_use= ('Year plotted: ' + str(time2plot) + ' \linebreak ')
             dopdf(diffsavedfiles, 'difffile', difffilecount, exp1 + '_' + plottedT1+ '_minus_' + exp0 + '_' + plottedT0, diff_sentence_to_use ) 
         timecount += 1
         globalcount += 1
