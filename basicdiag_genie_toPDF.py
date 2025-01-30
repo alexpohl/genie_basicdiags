@@ -346,10 +346,10 @@ for exp in exps:
 
             # deep O2
             O2 = ocn_O2[T,:,:,:]*1E6 # (16, 36, 36); umol L-1)
-            deepO2 = np.full(np.array([36, 36]),np.nan)
+            deepO2 = np.full(np.array([nlon, nlat]),np.nan)
             # deepest level?
-            for i in np.arange(0,36):
-                for j in np.arange(0,36):
+            for i in np.arange(0,nlon):
+                for j in np.arange(0,nlat):
                     ix = np.squeeze(np.ma.where(grid_mask_3d[:,i,j].mask == False))
                     if ix.any(): # if land point, leave np.nan in the array
                         ideepest = ix[-1]
