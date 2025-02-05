@@ -47,8 +47,8 @@
 # 63  ::  NC -- mean -- benthic water age (yr), deep only
 # 64  ::  NC -- mean -- benthic O2 ($\mu$mol kg-1), deep only
 # 65  ::  NC -- mean -- benthic ocean temperature, deep only
-# 66  ::  NC -- mean -- mean low-lat (-10 – 10 deg) SST
-# 67  ::  NC -- mean -- mean low-lat (-10 – 10 deg) benthic ocean temperature, deep only
+# 66  ::  NC -- mean -- mean low-lat (-10 - 10 deg) SST
+# 67  ::  NC -- mean -- mean low-lat (-10 - 10 deg) benthic ocean temperature, deep only
 # 68  ::  NC -- mean -- mean South Pole sea-ice fraction
 # 69  ::  NC -- mean -- mean high-lat sea-ice fraction
 # 70  ::  global total ALK (mol)
@@ -56,9 +56,9 @@
 # 72  ::  atlantic min overturning (Sv)
 # 73  ::  atlantic max overturning (Sv)
 # 74  ::  pCH4 (ppm)
-# 75  ::  NC -- mean -- mean mid-lat (-40 – 40 deg) SST
-# 76  ::  NC -- mean -- mean low-lat (-30 – 30 deg) SST
-# 77  ::  NC -- mean -- mean low-lat (-15 – 15 deg) SST
+# 75  ::  NC -- mean -- mean mid-lat (-40 - 40 deg) SST
+# 76  ::  NC -- mean -- mean low-lat (-30 - 30 deg) SST
+# 77  ::  NC -- mean -- mean low-lat (-15 - 15 deg) SST
 # 78  :: global total SO4 (mol)
 # 79  :: global mean SO4 (mol kg-1)
 # 80  ::  NC -- mean -- shallow benthic SO4 ($\mu$mol kg-1), shallow only
