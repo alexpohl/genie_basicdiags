@@ -146,6 +146,8 @@ dict_biogem2d = {
 'atm_temp':'atm_temp', # basic ocean state
 'phys_wspeed':'phys_wspeed',
 'phys_opsi':'phys_opsi',
+'phys_opsia':'phys_opsia',
+'phys_opsip':'phys_opsip',
 'phys_psi':'phys_psi',
 'phys_seaice':'phys_seaice',
 'phys_cost':'phys_cost',
@@ -789,6 +791,72 @@ for exp in exps:
                         #diffticklevs = np.arange(-10,10+1E-3,5)
                         diffextend = 'both'
                         difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_opsi.png'
+                        genielat(lat_moc_edges,-1*zt_moc_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat_moc, -1*zt_moc/1000., difflevs, 0.5, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('phys_opsia'):
+                # %%%%%%%%%%%% MOC %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.arange(-15,15+1E-9,2.5)
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.90)
+                cmap = fzcmap_alpha065
+                norm = BoundaryNorm(levs, ncolors=cmap.N, clip=False)
+                extend = 'both'
+                cbartitle = 'Atlantic overturning streamfunction'
+                filename = exp + '_' + plottedT + '_phys_opsia.png'
+                clevs = np.arange(-15,15+1E-9,5)
+                # --- figure ---
+                genielat(lat_moc_edges,-1*zt_moc_edges/1000.,phys_opsia[T,:,:], cmap, levs, clevs, 'both', lower, upper, cbartitle, filename, 'y', lat_moc, -1*zt_moc/1000., levs, 0.75, False)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        phys_opsia_0 = phys_opsia[T,:,:]
+                    elif globalcount ==1:
+                        phys_opsia_1 = phys_opsia[T,:,:]
+                        diff = phys_opsia_1 - phys_opsia_0
+                        difflevs = np.arange(-15,15+1E-3,2.5)
+                        diffticklevs = np.arange(-15,15+1E-3,5)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_opsia.png'
+                        genielat(lat_moc_edges,-1*zt_moc_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat_moc, -1*zt_moc/1000., difflevs, 0.5, False)
+                        difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
+                        os.system('ln -s ' + difffilename + ' ' + difflnfile)
+                        diffsavedfiles.append(difffilename)
+
+            if dovar('phys_opsip'):
+                # %%%%%%%%%%%% MOC %%%%%%%%%%%%
+                # --- parameters ---
+                levs = np.arange(-15,15+1E-9,2.5)
+                lower = fakealpha(mpl.colors.to_rgba('darkblue')[0:3],0.65)
+                upper = fakealpha(mpl.colors.to_rgba('darkred')[0:3],0.90)
+                cmap = fzcmap_alpha065
+                norm = BoundaryNorm(levs, ncolors=cmap.N, clip=False)
+                extend = 'both'
+                cbartitle = 'Pacific overturning streamfunction'
+                filename = exp + '_' + plottedT + '_phys_opsip.png'
+                clevs = np.arange(-15,15+1E-9,5)
+                # --- figure ---
+                genielat(lat_moc_edges,-1*zt_moc_edges/1000.,phys_opsip[T,:,:], cmap, levs, clevs, 'both', lower, upper, cbartitle, filename, 'y', lat_moc, -1*zt_moc/1000., levs, 0.75, False)
+                filecount += 1; lnfile = 'file' + str(filecount) + '.png'
+                os.system('ln -s ' + filename + ' ' + lnfile)
+                savedfiles.append(filename)
+                # --- diff ---
+                if do_diff == 'y':
+                    if globalcount ==0:
+                        phys_opsip_0 = phys_opsip[T,:,:]
+                    elif globalcount ==1:
+                        phys_opsip_1 = phys_opsip[T,:,:]
+                        diff = phys_opsip_1 - phys_opsip_0
+                        difflevs = np.arange(-15,15+1E-3,2.5)
+                        diffticklevs = np.arange(-15,15+1E-3,5)
+                        diffextend = 'both'
+                        difffilename = exp1 + '_' + plottedT1 + '_minus_' + exp0 + '_' + plottedT0 + '_phys_opsip.png'
                         genielat(lat_moc_edges,-1*zt_moc_edges/1000.,diff, diffcmap, difflevs, diffticklevs, diffextend, difflower, diffupper, cbartitle, difffilename, 'y', lat_moc, -1*zt_moc/1000., difflevs, 0.5, False)
                         difffilecount += 1; difflnfile = 'difffile' + str(difffilecount) + '.png'
                         os.system('ln -s ' + difffilename + ' ' + difflnfile)
